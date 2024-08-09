@@ -233,7 +233,47 @@ def extract_fixed_number_frames(video_path, output_folder, target_frame_count, t
 
     cap.release()
     print("帧提取完成")
+
+
+def extract_fix_num_frames(video_path, num_frames, save_dir):
+    # 检查并创建保存目录
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    
+    # 打开视频文件
+    cap = cv2.VideoCapture(video_path)
+    
+    # 获取视频的总帧数
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    # 计算每个要提取帧的位置
+    step = total_frames // num_frames
+    frame_indices = [i * step for i in range(num_frames)]
+    
+    frame_count = 0
+    
+    for i in range(total_frames):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        # 检查当前帧是否在我们需要的位置上
+        if i in frame_indices:
+            # 保存提取的帧为图像文件，文件名从0000开始顺序命名
+            frame_filename = os.path.join(save_dir, f'{frame_count:04d}.png')
+            cv2.imwrite(frame_filename, frame)
+            frame_count += 1
+    
+    # 释放视频捕获对象
+    cap.release()
+
 if __name__ == "__main__":
-    input  = '/cfs/wangboyuan/run_3DGS/dataset/000_test/a1_just_mp4/office/demo_office_1080p.mp4'
-    adaptive_extract_frames(input, output_folder='/cfs/wangboyuan/run_3DGS/dataset/000_test/a1_just_mp4/office/rgb', high_fps=2, low_fps=1)
-    # extract_fixed_number_frames(input, output_folder='/cfs/wangboyuan/run_3DGS/dataset/000_test/a1_just_mp4/office/rgb', target_frame_count=430)
+    for scene in ["sofa", "table", "dressing_table"]:
+        os.system(f"rm -rf /cfs/wangboyuan/dataset/furniture/sparse_{scene}/database.db")
+        os.system(f"rm -rf /cfs/wangboyuan/dataset/furniture/sparse_{scene}/dense")
+        os.system(f"rm -rf /cfs/wangboyuan/dataset/furniture/sparse_{scene}/sparse")
+        os.system(f"rm -rf /cfs/wangboyuan/dataset/furniture/sparse_{scene}/images")
+        os.system(f"rm -rf /cfs/wangboyuan/dataset/furniture/sparse_{scene}/mask")
+        input  = f'/cfs/wangboyuan/dataset/furniture/sparse_{scene}/video.mp4'
+        save_dir = os.path.join(os.path.split(input)[0], "images")
+        extract_fix_num_frames(input, 50, save_dir)
